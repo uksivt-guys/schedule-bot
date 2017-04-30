@@ -18,14 +18,9 @@ class  SqlDB(object):
 		cursor.close()
 		self.connection.commit()
 
-	#проверка пользователя на подписку
-	def check_chat_id(self, chat_id):
-		sql = 'SELECT group_id FROM schedule.subscribe_group where chat_id = ' + str(chat_id) + ';'
-		result = self.__sql_query_with_result__(sql)
-		if (len(result) != 0):
-			return result[0][0]
-		else:
-			return 0
+	#проверка пользователя на подписку на группу
+	def check_subscribe_group(self, chat_id):
+		return len(self.get_subscribe_group(chat_id))
 
 	#получение расписания на день недели
 	def get_schedule(self, group_id, num_weekday):
@@ -82,8 +77,9 @@ class  SqlDB(object):
 		return self.__sql_query_with_result__(sql)[0][0]
 
 	#получение списка групп
-	def get_groups(self):
-		sql = 'SELECT id, name FROM groups ORDER BY name;'
+	def get_groups(self, group_id = 0):
+		sql = 'SELECT id, name FROM groups '
+		sql += 'ORDER BY name;' if group_id == 0 else 'WHERE id = ' + str(group_id) + ' ORDER BY name;'
 		result = self.__sql_query_with_result__(sql)
 		groups = list()
 		for group in result:
@@ -92,6 +88,40 @@ class  SqlDB(object):
 				'name': group[1]
 				})
 		return groups
+
+	#добавление подписки на группу
+	def add_subscribe_group(self, chat_id, group_id):
+		sql = 'INSERT INTO subscribe_group (chat_id, group_id) VALUES (' + str(chat_id) + ', ' + str(group_id) + ');'
+		self.__sql_query_non_result__(sql)
+
+	#удаление подписки на группу
+	def del_subscribe_group(self, chat_id, group_id):
+		sql = 'DELETE FROM subscribe_group WHERE chat_id = ' + str(chat_id) + ' and group_id = ' + str(group_id) + ';'
+		self.__sql_query_non_result__(sql)
+
+	#получение подписок на группы
+	def get_subscribe_group(self, chat_id):
+		sql = 'SELECT group_id, groups.name FROM subscribe_group INNER JOIN groups ON groups.id = subscribe_group.group_id '
+		sql += 'WHERE chat_id = ' + str(chat_id) + ';'
+		result = self.__sql_query_with_result__(sql)
+		groups = list()
+		for group in result:
+			groups.append({
+				'id': group[0],
+				'name': group[1]
+				})
+		return groups
+
+	#получение списка подписчиков на группу
+	def get_group_subscribers(self, group_id):
+		sql = 'SELECT chat_id FROM subscribe_group WHERE group_id = ' + str(group_id) + ';'
+		result = self.__sql_query_with_result__(sql)
+		subscribers = list()
+		for subscriber in result:
+			subscribers.append({
+				'id': subscriber[0]
+				})
+		return subscribers
 
 	#получение списка преподавателей
 	def get_teachers(self):
@@ -105,25 +135,27 @@ class  SqlDB(object):
 				})
 		return teachers
 
-	#подписка на группу
-	def set_group(self, chat_id, group_id):
-		sql = ''
-		if (not self.check_chat_id(chat_id)):
-			sql = 'INSERT INTO subscribe_group (chat_id, group_id) VALUES (' + str(chat_id) + ', ' + group_id + ');'
-		else:
-			sql = 'UPDATE subscribe_group SET group_id = ' + group_id + ' WHERE chat_id = ' + str(chat_id) + ';'
+	#добавление подписки на преподавателя
+	def add_subscribe_techer(self, chat_id, teacher_id):
+		sql = 'INSERT INTO subscribe_teacher (chat_id, teacher_id) VALUES (' + str(chat_id) + ', ' + str(teacher_id) + ');'
 		self.__sql_query_non_result__(sql)
 
-	#получение списка подписчиков на группу
-	def get_group_subscribers(self, group_id):
-		sql = 'SELECT chat_id FROM subscribe_group WHERE group_id = ' + str(group_id) + ';'
-		result = self.__sql_query_with_result__(sql)
-		subscribers = list()
-		for subscriber in result:
-			subscribers.append({
-				'id': subscriber[0]
-				})
-		return subscribers
+	#удаление подписки на преподавателя
+	def del_subscribe_techer(self, chat_id, teacher_id):
+		sql = 'DELETE FROM subscribe_teacher WHERE chat_id = ' + str(chat_id) + ' and teacher_id = ' + str(teacher_id) + ';'
+		self.__sql_query_non_result__(sql)
 
+	#получение подписок на преподавателей
+	def get_subscribe_teacher(self, chat_id):
+		sql = 'SELECT teacher_id, teachers.name FROM subscribe_teacher INNER JOIN teachers ON teachers.id = subscribe_group.teacher_id '
+		sql += 'WHERE chat_id = ' + str(chat_id) + ';'
+		result = self.__sql_query_with_result__(sql)
+		teachers = list()
+		for teacher in result:
+			teachers.append({
+				'id': teacher[0],
+				'name': teacher[1]
+				})
+		return teachers
 
 db = SqlDB(KeysDB.HOST, KeysDB.USER, KeysDB.PASSWORD, KeysDB.DATABASE)

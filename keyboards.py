@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from database import db as database
 from telebot import types
-from const import HUD, types_schedule, day_week
+from const import HUD, types_schedule, get_day_week
 from session import Users
 import json
 
@@ -63,7 +63,7 @@ def subgroup_menu():
 def inline_keyboard_day_week():
     keyboard = types.InlineKeyboardMarkup()
     for i in range(0, 6):
-        button = types.InlineKeyboardButton(text=day_week[i], callback_data='schedule_on -' + str(i))
+        button = types.InlineKeyboardButton(text=get_day_week(i), callback_data='schedule_on -' + str(i))
         keyboard.add(button)
     return keyboard
 
@@ -72,7 +72,7 @@ def inline_keyboard_groups():
     keyboard = types.InlineKeyboardMarkup()
     groups = database.get_groups()
     for group in groups:
-        group_button = types.InlineKeyboardButton(text=group['name'], callback_data='set_group -' + str(group['id']))
+        group_button = types.InlineKeyboardButton(text=group['name'], callback_data='add_group -' + str(group['id']))
         keyboard.add(group_button)
     return keyboard
 
@@ -81,16 +81,56 @@ def inline_keyboard_teachers():
     keyboard = types.InlineKeyboardMarkup()
     teachers = database.get_teachers()
     for teacher in teachers:
-        teacher_button = types.InlineKeyboardButton(text=teacher['name'], callback_data='schedule_teacher -' + str(teacher['id']))
+        teacher_button = types.InlineKeyboardButton(text=teacher['name'], callback_data='add_teacher -' + str(teacher['id']))
         keyboard.add(teacher_button)
     return keyboard
 
-#главное меню
+#инлайн клавиатура подписок на группы (для расписания)
+def inline_keyboard_subscribe_group_schedule(chat_id):
+    keyboard = types.InlineKeyboardMarkup()
+    groups = database.get_subscribe_group(chat_id)
+    for group in groups:
+        group_button = types.InlineKeyboardButton(text='для ' + group['name'], callback_data='sch_group -' + str(group['id']))
+        keyboard.add(group_button)
+    button = types.InlineKeyboardButton(text='для всех', callback_data='sch_group -all')
+    keyboard.add(button)
+    return keyboard
+
+#инлайн клавиатура подписок на группы (для удаления)
+def inline_keyboard_subscribe_group_delete(chat_id):
+    keyboard = types.InlineKeyboardMarkup()
+    groups = database.get_subscribe_group(chat_id)
+    for group in groups:
+        group_button = types.InlineKeyboardButton(text=group['name'], callback_data='del_group -' + str(group['id']))
+        keyboard.add(group_button)
+    return keyboard
+
+#инлайн клавиатура подписок на преподавателей (для расписания)
+def inline_keyboard_subscribe_teacher_schedule(chat_id):
+    keyboard = types.InlineKeyboardMarkup()
+    teachers = database.get_subscribe_group(chat_id)
+    for teacher in teachers:
+        teacher_button = types.InlineKeyboardButton(text='для ' + teacher['name'], callback_data='sch_teacher -' + str(teacher['id']))
+        keyboard.add(teacher_button)
+    teacher_button = types.InlineKeyboardButton(text='для всех', callback_data='sch_teacher -all')
+    keyboard.add(teacher_button)
+    return keyboard
+
+#инлайн клавиатура подписок на преподавателей (для удаления)
+def inline_keyboard_subscribe_teacher_delete(chat_id):
+    keyboard = types.InlineKeyboardMarkup()
+    teachers = database.get_subscribe_teacher(chat_id)
+    for teacher in teachers:
+        teacher_button = types.InlineKeyboardButton(text=teacher['name'], callback_data='del_teacher -' + str(teacher['id']))
+        keyboard.add(teacher_button)
+    return keyboard
+
+#главное меню бота подписчиков
 def keyboard_menu():
     keyboard = types.ReplyKeyboardMarkup()
     keyboard.row('Расписание без замен', 'Расписание с заменами')
-    keyboard.row('Расписание на преподавателя')
-    keyboard.row('Выбрать группу')
+    keyboard.row('Расписание без замен на преподавателя', 'Расписание с замен на преподавателя')
+    keyboard.row('Настройки')
     return keyboard
 
 #меню расписания
@@ -98,5 +138,13 @@ def keyboard_menu_schedule(type):
     keyboard = types.ReplyKeyboardMarkup()
     keyboard.row(types_schedule[type] + ' на сегодня', types_schedule[type] + ' на завтра')
     keyboard.row(types_schedule[type] + ' на другой день недели', types_schedule[type] + ' на неделю')
+    keyboard.row('Назад')
+    return keyboard
+
+#меню настроек подписчика
+def keyboard_menu_settings():
+    keyboard = types.ReplyKeyboardMarkup()
+    keyboard.row('Добавить подписку на группу', 'Добавить подписку на преподавателя')
+    keyboard.row('Удалить подписку на группу', 'Удалить подписку на преподавателя')
     keyboard.row('Назад')
     return keyboard
