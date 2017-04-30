@@ -4,7 +4,7 @@
 SUBSCRIBER_TOKEN = ''
 #токен для бота администратора
 DISPATCHER_TOKEN = ''
-#путь для файла расписания
+#путь к директории загрузок telegram
 PATH_TO_FILES = ''
 #ключи базы данных
 class KeysDB(object):
