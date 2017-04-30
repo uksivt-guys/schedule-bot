@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sqldata, pymysql
 from session import Users, AntiCrash
 

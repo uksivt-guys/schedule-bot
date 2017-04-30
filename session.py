@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from const import HUD
 
 Users = dict()

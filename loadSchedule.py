@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from ParserXLSX import parse
 from const import HUD
 from keys import PATH_TO_FILES
