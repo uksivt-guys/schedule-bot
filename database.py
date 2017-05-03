@@ -22,6 +22,9 @@ class  SqlDB(object):
 	def check_subscribe_group(self, chat_id):
 		return len(self.get_subscribe_group(chat_id))
 
+	def check_subscribe_teacher(self, chat_id):
+		return len(self.get_subscribe_teacher(chat_id))
+
 	#получение расписания на день недели
 	def get_schedule(self, group_id, num_weekday):
 		sql = 'SELECT general_schedule.lesson_number, general_schedule.group_type, subjects.name, teachers.name, general_schedule.room'
@@ -124,8 +127,9 @@ class  SqlDB(object):
 		return subscribers
 
 	#получение списка преподавателей
-	def get_teachers(self):
-		sql = 'SELECT id, name FROM teachers ORDER BY name;'
+	def get_teachers(self, teacher_id = 0):
+		sql = 'SELECT id, name FROM teachers '
+		sql += 'ORDER BY name;' if teacher_id == 0 else 'WHERE id = ' + str(teacher_id) + ' ORDER BY name;' 
 		result = self.__sql_query_with_result__(sql)
 		teachers = list()
 		for teacher in result:
@@ -136,18 +140,18 @@ class  SqlDB(object):
 		return teachers
 
 	#добавление подписки на преподавателя
-	def add_subscribe_techer(self, chat_id, teacher_id):
+	def add_subscribe_teacher(self, chat_id, teacher_id):
 		sql = 'INSERT INTO subscribe_teacher (chat_id, teacher_id) VALUES (' + str(chat_id) + ', ' + str(teacher_id) + ');'
 		self.__sql_query_non_result__(sql)
 
 	#удаление подписки на преподавателя
-	def del_subscribe_techer(self, chat_id, teacher_id):
+	def del_subscribe_teacher(self, chat_id, teacher_id):
 		sql = 'DELETE FROM subscribe_teacher WHERE chat_id = ' + str(chat_id) + ' and teacher_id = ' + str(teacher_id) + ';'
 		self.__sql_query_non_result__(sql)
 
 	#получение подписок на преподавателей
 	def get_subscribe_teacher(self, chat_id):
-		sql = 'SELECT teacher_id, teachers.name FROM subscribe_teacher INNER JOIN teachers ON teachers.id = subscribe_group.teacher_id '
+		sql = 'SELECT teacher_id, teachers.name FROM subscribe_teacher INNER JOIN teachers ON teachers.id = subscribe_teacher.teacher_id '
 		sql += 'WHERE chat_id = ' + str(chat_id) + ';'
 		result = self.__sql_query_with_result__(sql)
 		teachers = list()
