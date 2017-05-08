@@ -4,7 +4,7 @@ from datetime import datetime, date, time
 
 from keys import SUBSCRIBER_TOKEN
 from database import db as database
-from prototype import weekday_schedule
+from subscribers_bot import weekday_schedule
 
 
 bot = telebot.TeleBot(SUBSCRIBER_TOKEN)
