@@ -6,7 +6,7 @@ from database import db as database
 from telebot import types
 from const import HUD, types_schedule, get_day_week
 from session import Users
-from const import STATES
+from replacement import STATES
 from replacement import Replacement
 
 def user_menu():
