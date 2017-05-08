@@ -61,18 +61,37 @@ class  SqlDB(object):
 
 	#получение расписания преподавателя
 	def get_teacher_schedule(self, teacher_id, num_weekday):
-		sql = 'SELECT  lesson_number, groups.name, room'
+		sql = 'SELECT  weekday, lesson_number, groups.name, group_type, room'
 		sql += ' FROM general_schedule INNER JOIN subjects ON subjects.id = general_schedule.subject_id INNER JOIN groups ON groups.id = general_schedule.group_id'
-		sql += ' WHERE teacher_id = ' + str(teacher_id) + ' and weekday = ' + str(num_weekday) + ' order by lesson_number;'
+		sql += ' WHERE teacher_id = ' + str(teacher_id) + ' order by weekday, lesson_number;'
 		result = self.__sql_query_with_result__(sql)
 		teacher_schedule = list()
 		for schedule in result:
 			teacher_schedule.append({
-				'lesson_number': schedule[0],
-				'group_name': schedule[1],
-				'room': schedule[2]
+				'weekday': schedule[0],
+				'lesson_number': schedule[1],
+				'group_name': schedule[2],
+				'group_type': schedule[3],
+				'room': schedule[4]
 				})
 		return teacher_schedule
+
+	#получение замен преподавателя
+	def get_teacher_replacements(self, teacher_id, num_weekday):
+		sql = 'SELECT  weekday(day), lesson_number, groups.name, group_type, room'
+		sql += ' FROM replacements INNER JOIN subjects ON subjects.id = subject_id INNER JOIN groups on groups.id = group_id'
+		sql += ' WHERE day >= date(now()) and teacher_id = ' + str(teacher_id) + ' ORDER BY day, lesson_number;'
+		result = self.__sql_query_with_result__(sql)
+		teacher_replacements = list()
+		for replacement in result:
+			teacher_replacements.append({
+				'weekday': replacement[0],
+				'lesson_number': replacement[1],
+				'group_name': replacement[2],
+				'group_type': replacement[3],
+				'room': replacement[4]
+				})
+		return teacher_replacements
 
 	#получение имени преподавателя
 	def get_teacher_name(self, teacher_id):
