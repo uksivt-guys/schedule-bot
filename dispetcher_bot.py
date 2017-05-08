@@ -9,7 +9,7 @@ from loadSchedule import load_schedule
 from replacement import Replacement
 import json
 import datetime
-from settings import HUD, Users, AntiCrash
+from session import Users, AntiCrash
 from const import HUD 
 import messageGroup
 
