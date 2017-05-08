@@ -101,15 +101,18 @@ def weekday_schedule(group_id, num_weekday, type_schedule = False):
 	return message
 
 
-#отправка расписания на преподавателя
+#формирование расписания на преподавателя
 def teacher_schedule(teacher_id):
 	mes = ''
-	for i in range(0, 7):
-		teacher_schedule = database.get_teacher_schedule(teacher_id, i)
-		if len(teacher_schedule) > 0:
-			mes += '----На ' + const.get_day_week(i) + '----\n'
-			for schedule in teacher_schedule:
-				mes += str(schedule['lesson_number']) + '. ' + str(schedule['group_name']) + ' - ' + str(schedule['room']) + '\n'
+	teacher_schedule = database.get_teacher_schedule(teacher_id, 1)
+	weekday = -1
+	for schedule in teacher_schedule:
+		if schedule['weekday'] != weekday:
+			weekday = schedule['weekday']
+			mes += '----На ' + const.get_day_week(weekday) + '----\n'
+		mes += str(schedule['lesson_number']) + '. ' + str(schedule['group_name'])
+		mes += ' (' + str(schedule['group_type']) + ' подгруппа)' if  schedule['group_type'] != 0 else ''
+		mes += ' - ' + str(schedule['room']) + '\n'
 	return mes
 
 
