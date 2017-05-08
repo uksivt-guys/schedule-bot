@@ -5,10 +5,8 @@ import json
 from database import db as database
 from telebot import types
 from const import HUD, types_schedule, get_day_week
-from const import HUD, types_schedule, day_week
 from session import Users
-from telebot import types
-from replacement import STATES
+from const import STATES
 from replacement import Replacement
 
 def user_menu():
