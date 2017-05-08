@@ -9,13 +9,15 @@ from loadSchedule import load_schedule
 from replacement import Replacement
 import json
 import datetime
-from session import Users, AntiCrash
-from const import HUD
+from settings import HUD, Users, AntiCrash
+from const import HUD 
+import messageGroup
 
 Admin.init(db)
 
 bot = telebot.TeleBot(keys.DISPATCHER_TOKEN)
 bot_2 = telebot.TeleBot(keys.SUBSCRIBER_TOKEN)
+
 
 @bot.message_handler(commands=["start"])
 def initilization(message):
@@ -32,6 +34,10 @@ def initilization(message):
 def helping(message):
     bot.send_message(message.chat.id, HUD.HELP)
 
+@bot.message_handler(commands=["myid"])
+def myid(message):
+    bot.send_message(message.chat.id, message.chat.id)
+
 @bot.message_handler(content_types=["document"])
 def load_sc(message):
     chat_id = message.chat.id
@@ -47,6 +53,7 @@ def msg_handler(message):
     text = message.text
     chat_id = message.chat.id
     AntiCrash(chat_id)
+    rep = Users[message.chat.id].replacements
 
     if (text == HUD.BUTTON_AUTH):
         bot.send_message(chat_id, HUD.AUTH)
@@ -64,6 +71,10 @@ def msg_handler(message):
     if (text == HUD.BUTTON_MESSAGE):
         Users[chat_id].Action = HUD.ACTION_MESSAGE
         bot.send_message(chat_id, HUD.SEND_MSG)
+    elif (text == HUD.BUTTON_MESSAGE_GROUP):
+        Users[chat_id].Action = HUD.ACTION_MESSAGE_GROUP
+        markup = keyboards.group_message_menu(messageGroup.getGroups())
+        bot.send_message(chat_id, "Выберете группу", reply_markup=markup)
     elif (text == HUD.BUTTON_LOADFILE):
         Users[chat_id].Action = HUD.ACTION_LOADFILE
         bot.send_message(chat_id, HUD.LOADFILE)
@@ -72,8 +83,10 @@ def msg_handler(message):
         markup = keyboards.user_menu()
         bot.send_message(message.chat.id, HUD.DISCONNECT, reply_markup=markup)
     elif (text == HUD.BUTTON_REPLACEMENT):
-        markup = keyboards.group_menu(["2П-1", "2П-2", "3П-1"])
-        bot.send_message(message.chat.id, HUD.REPLACEMENT_SELECT_GROUP, reply_markup=markup)
+        rep = Replacement()
+        Users[chat_id].replacements = rep
+        markup = keyboards.replacement_menu(0, rep)
+        bot.send_message(message.chat.id, "Выберете курс", reply_markup=markup)
     elif (Users[chat_id].Action == HUD.ACTION_MESSAGE):
         send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
         for u in Users:
@@ -83,21 +96,14 @@ def msg_handler(message):
                 pass
         Users[chat_id].Action = 0
         return
-    elif (text == HUD.BUTTON_PUBLISH_REPLACEMENTS):
-        try:
-            Users[chat_id].replacements.PublishReplacements(bot_2)
-            markup = keyboards.admin_menu()
-            bot.send_message(chat_id, "..", reply_markup=markup)
-        except:
-            pass
-        return
-    elif (Users[chat_id].replacements != 0 and Users[chat_id].replacements.room):
-        rep = Users[chat_id].replacements
-        rep.room = text
-        rep.intoBase()
-        markup = keyboards.admin_menu(chat_id=chat_id)
-        bot.send_message(chat_id, "..", reply_markup=markup)
-        return
+    elif (Users[chat_id].Action == HUD.ACTION_MESSAGE_GROUP_TYPING):
+        send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
+        messageGroup.sendGroupMessage(bot_2, send_msg, Users[chat_id].message_group)
+    elif not (rep==0) and (rep.typingRoom):
+        bot.send_message(chat_id, "Введите аудиторию")
+        rep.setRoom(text)
+        markup = keyboards.replacement_menu(rep.state, rep)
+        bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
     else:
         bot.send_message(chat_id, HUD.HELP_INFO)
 
@@ -107,34 +113,19 @@ def cllbck(res):
     key = res.data['0']
     value = res.data['1']
     message = res.message
-    if(key=="rep_select_group"):
-        group = res.data['1']
-        rep = Replacement(db=db, group=group)
-        subjects = rep.getSchedule()
-        markup = keyboards.subject_menu(subjects)
-        bot.send_message(message.chat.id, "test", reply_markup=markup)
-        Users[message.chat.id].replacements = rep
-    if(key=="replace"):
-        rep = Users[message.chat.id].replacements
-        rep.number = value
-        if(type(rep) == int):
-            return
-        markup = keyboards.subjects_list_menu(rep.getSubjects())
-        bot.send_message(message.chat.id, "test", reply_markup=markup)
-    if(key=="apply_replace"):
-        rep = Users[message.chat.id].replacements
-        rep.replace_subject = value
-        if(type(rep)==int):
-            return
-        markup = keyboards.subgroup_menu()
-        bot.send_message(message.chat.id, "test", reply_markup=markup)
-    if(key=="subgroup"):
-        rep = Users[message.chat.id].replacements
-        if(type(rep)==int):
-            return
-        rep.subgroup = value
-        rep.getTeacher()
-        bot.send_message(message.chat.id, "Введите номер аудитории")
-        rep.room = True
+    if(key=="message_group"):
+        Users[message.chat.id].Action = HUD.ACTION_MESSAGE_GROUP_TYPING
+        Users[message.chat.id].message_group = value
+        bot.send_message(message.chat.id, "Введите сообщение")
+        return
+    rep = Users[message.chat.id].replacements
+    if(rep==0):
+        return
+    state = rep.action(key, value)
+    markup = keyboards.replacement_menu(state, rep)
+    if(markup==0):
+        bot.send_message(message.chat.id, rep.getText())
+    else:
+        bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
 
 bot.polling(none_stop=True,interval=0)

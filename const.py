@@ -35,12 +35,11 @@ class HUD(object):
 	LOADFILE_ERROR = u"Расписание обновлено, но имеет ошибки! Проверьте следующие ячейки:\n"
 	HELP = u"Порядок работы с приложением:\n1. Нажмите кнопку \"Авторизоваться\"\n(Если по каким-то причинам ее нет, то введите повторно команду /start)\n2. Введите ключ авторизации (По умолчанию: 1010)\n3. Выберете нужное вам действие из списка в меню"
 	SEND_MSG = u"Тестовый бот, на который приходят сообщения - @dmtestdm_bot\nПеред вводом сообщения, подпишитесь на этого бота!!!\n\nВведите ваше сообщение"
-	REPLACEMENT_SELECT_GROUP = u"Выберете группу"
 
 	# BUTTONS
 	BUTTON_MESSAGE = u"Написать сообщение всем"
+	BUTTON_MESSAGE_GROUP = u"Написать сообщение группе"
 	BUTTON_REPLACEMENT = u"Добавить замены"
-	BUTTON_PUBLISH_REPLACEMENTS = u"Опубликовать замены"
 	BUTTON_LOADFILE = u"Загрузить расписание"
 	BUTTON_AUTH = u"Авторизоваться"
 	BUTTON_EXIT = u"Выйти"
@@ -48,4 +47,7 @@ class HUD(object):
 	# ACTIONS
 	ACTION_MENU = 0
 	ACTION_MESSAGE = 1
+	ACTION_MESSAGE_GROUP = 2
+	ACTION_MESSAGE_GROUP_TYPING = 3
+
 	ACTION_LOADFILE = LoadFileType()
