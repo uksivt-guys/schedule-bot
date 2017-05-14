@@ -6,7 +6,8 @@ def get_day_week(weekday):
 		2: 'среду',
 		3: 'четверг',
 		4: 'пятницу',
-		5: 'субботу'
+		5: 'субботу',
+		6: 'неделю'
 		}[weekday]
 	if type(weekday) == str:
 		return {
@@ -20,8 +21,8 @@ def get_day_week(weekday):
 		}[weekday]
 
 types_schedule = {
-	0: 'Без замен',
-	1: 'С заменами'
+	0: 'без замен',
+	1: 'с заменами'
 }
 
 class LoadFileType(object):

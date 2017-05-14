@@ -76,7 +76,7 @@ def replacement_menu(state, rep):
 #инлайн клавиатура дней недели
 def inline_keyboard_day_week():
     keyboard = types.InlineKeyboardMarkup()
-    for i in range(0, 6):
+    for i in range(0, 7):
         button = types.InlineKeyboardButton(text=get_day_week(i), callback_data='schedule_on -' + str(i))
         keyboard.add(button)
     return keyboard
@@ -122,7 +122,7 @@ def inline_keyboard_subscribe_group_delete(chat_id):
 #инлайн клавиатура подписок на преподавателей (для расписания)
 def inline_keyboard_subscribe_teacher_schedule(chat_id):
     keyboard = types.InlineKeyboardMarkup()
-    teachers = database.get_subscribe_group(chat_id)
+    teachers = database.get_subscribe_teacher(chat_id)
     for teacher in teachers:
         teacher_button = types.InlineKeyboardButton(text='для ' + teacher['name'], callback_data='sch_teacher -' + str(teacher['id']))
         keyboard.add(teacher_button)
@@ -143,7 +143,7 @@ def inline_keyboard_subscribe_teacher_delete(chat_id):
 def keyboard_menu():
     keyboard = types.ReplyKeyboardMarkup()
     keyboard.row('Расписание без замен', 'Расписание с заменами')
-    keyboard.row('Расписание без замен на преподавателя', 'Расписание с замен на преподавателя')
+    keyboard.row('Расписание преподавателя без замен', 'Расписание преподавателя с заменами')
     keyboard.row('Настройки')
     return keyboard
 

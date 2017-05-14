@@ -14,8 +14,8 @@ bot = telebot.TeleBot(SUBSCRIBER_TOKEN)
 
 
 
-#конструктор строки расписания (type[True, False] - для 2 догруппы)
-def constructor_str_schedule(schedule):
+#конструктор строки расписания групп
+def str_schedule_group(schedule):
 	str_sched = ''
 	if schedule['subject_name'] != '-':
 		str_sched += str(schedule['lesson_number']) + '. '
@@ -67,54 +67,71 @@ def search_lesson(schedule, lesson_num, group_type = -1):
 
 #формирование расписания с заменами (type_schedule = True)/без (type_schedule = False)
 def weekday_schedule(group_id, num_weekday, type_schedule = False):
-	message = '----На ' + const.get_day_week(num_weekday) + ' для ' + database.get_groups(group_id)[0]['name'] + '----\n'
+	mes = '----На ' + const.get_day_week(num_weekday) + ' для ' + database.get_groups(group_id)[0]['name'] + '----\n'
 
 	gen_schedule = database.get_schedule(group_id, num_weekday)
 
+	#тип расписания(с заменами - true/без замен - false)
 	if type_schedule:
 		replacements = database.get_replacement(group_id, num_weekday)
 
-	for i in range(0, 7):
+	for lesson in range(0, 7):
 		group_type_sched = -1
-		#тип расписания(с заменами - true/без замен - false)
 		if type_schedule:
-			replacement = search_lesson(replacements, i)
+			replacement = search_lesson(replacements, lesson)
 			if replacement != 0:
 				if replacement[0]['group_type'] == 0:
-					message += constructor_str_schedule(replacement[0])
+					mes += str_schedule_group(replacement[0])
 					continue
 
 				elif len(replacement) == 2:
 					for replac in replacement:
-						message += constructor_str_schedule(replac)
+						mes += str_schedule_group(replac)
 					continue
 
 				else:
-					message += constructor_str_schedule(replacement[0])
+					mes += str_schedule_group(replacement[0])
 					group_type_sched = {1:2,2:1}[replacement[0]['group_type']]
 
-		schedule = search_lesson(gen_schedule, i, group_type_sched)
+		schedule = search_lesson(gen_schedule, lesson, group_type_sched)
 		if schedule != 0:
 			for sched in schedule:
-				message += constructor_str_schedule(sched)
+				mes += str_schedule_group(sched)
 
-	return message
+	return mes
+
+
+#конструктор строки расписания преподавателя
+def str_schedule_teacher(schedule):
+	str_sched = ''
+	if schedule['subject_name'] != '-':
+		str_sched += str(schedule['lesson_number']) + '. ' + str(schedule['group_name'])
+		str_sched += ' (' + str(schedule['group_type']) + ' подгруппа)' if  schedule['group_type'] != 0 else ''
+		str_sched += ' - ' + str(schedule['room']) + '\n'
+	return str_sched
 
 
 #формирование расписания на преподавателя
-def teacher_schedule(teacher_id):
-	mes = ''
-	teacher_schedule = database.get_teacher_schedule(teacher_id, 1)
-	weekday = -1
-	for schedule in teacher_schedule:
-		if schedule['weekday'] != weekday:
-			weekday = schedule['weekday']
-			mes += '----На ' + const.get_day_week(weekday) + '----\n'
-		mes += str(schedule['lesson_number']) + '. ' + str(schedule['group_name'])
-		mes += ' (' + str(schedule['group_type']) + ' подгруппа)' if  schedule['group_type'] != 0 else ''
-		mes += ' - ' + str(schedule['room']) + '\n'
-	return mes
+def teacher_schedule(teacher_id, num_weekday, type_schedule = False):
+	mes = '----На ' + const.get_day_week(num_weekday) + ' для ' + database.get_teachers(teacher_id)[0]['name'] + '----\n'
+	
+	teacher_schedule = database.get_teacher_schedule(teacher_id, num_weekday)
 
+	if type_schedule:
+		replacements = database.get_teacher_replacements(teacher_id, num_weekday)
+
+	for lesson in range(0, 7):
+		if type_schedule:
+			schedule = search_lesson(replacements, lesson)
+			if schedule == 0:
+				schedule = search_lesson(teacher_schedule, lesson)
+		else:
+			schedule = search_lesson(teacher_schedule, lesson)
+
+		if schedule != 0:
+			mes += str_schedule_teacher(schedule[0])
+
+	return mes
 
 
 #старт бота (начало чата с ботом)
@@ -131,6 +148,52 @@ def callback_inline(call):
 	chat_id = call.message.chat.id
 
 	if call.message:
+		#отправка расписания на определенный день недели
+		if 'schedule_on' in call.data:
+			weekday = int(float(call.data[13:]))
+			keyboard = ''
+			mes = call.message.text + ' ' + const.get_day_week(weekday)
+
+			#для преподавателя
+			if 'преподавателя' in call.message.text:
+				teachers = database.check_subscribe_teacher(chat_id)
+				if teachers == 1:
+					teacher_id = database.get_subscribe_teacher(chat_id)[0]['id']
+					bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes, reply_markup = keyboard)
+					if weekday == 6:
+						for i in range(0,6):
+							message = teacher_schedule(teacher_id, i, const.types_schedule[1] in call.message.text)
+							bot.send_message(chat_id, message)
+					else:
+						message = teacher_schedule(teacher_id, weekday, const.types_schedule[1] in call.message.text)
+						bot.send_message(chat_id, message)
+					return
+				elif teachers > 1:
+					keyboard = keyboards.inline_keyboard_subscribe_teacher_schedule(chat_id)
+				else:
+					mes = 'Сначала добавь подписку на преподавателя'
+
+			#для группы
+			else:
+				groups = database.check_subscribe_group(chat_id)
+				if groups == 1:
+					group_id = database.get_subscribe_group(chat_id)[0]['id']
+					bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes, reply_markup = keyboard)
+					if weekday == 6:
+						for i in range(0,6):
+							message = weekday_schedule(group_id, i, const.types_schedule[1] in call.message.text)
+							bot.send_message(chat_id, message)
+					else:
+						message = weekday_schedule(group_id, weekday, const.types_schedule[1] in call.message.text)
+						bot.send_message(chat_id, message)
+					return
+				elif groups > 1:
+					keyboard = keyboards.inline_keyboard_subscribe_group_schedule(chat_id)
+				else:
+					mes = 'Сначала добавь подписку на группу'
+
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes, reply_markup = keyboard)
+		
 		#добавление подписки на группу
 		if 'add_group' in call.data:
 			group_id = call.data[11:]
@@ -145,50 +208,30 @@ def callback_inline(call):
 		#удаление подписки на группу
 		if 'del_group' in call.data:
 			group_id = call.data[11:]
+			mes = 'Удалена подписка на ' + database.get_groups(group_id)[0]['name']
 			database.del_subscribe_group(chat_id, group_id)
-			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Удалена подписка на ' + database.get_groups(group_id)[0]['name'])
-
-		#отправка расписания на определенный день недели
-		if 'schedule_on' in call.data:
-			groups = database.check_subscribe_group(chat_id)
-			weekday = int(float(call.data[13:]))
-			keyboard = ''
-
-			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=call.message.text + ' ' + const.get_day_week(weekday), reply_markup = keyboard)
-
-			if groups == 1:
-				group_id = database.get_subscribe_group(chat_id)[0]['id']
-				message = weekday_schedule(group_id, weekday, const.types_schedule[1] in call.message.text)
-				bot.send_message(chat_id, message)
-			else:
-				keyboard = keyboards.inline_keyboard_subscribe_group_schedule(chat_id)
-
-			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=call.message.text + ' ' + const.get_day_week(weekday), reply_markup = keyboard)
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes)
 
 		#отправка расписания
 		if 'sch_group' in call.data:
 			group_id = call.data[11:]
+			groups = database.get_subscribe_group(chat_id) if group_id == 'all' else [{'id': int(group_id)}]
+			mes = call.message.text + ' для '
+			mes += 'всех' if group_id == 'all' else database.get_groups(int(group_id))[0]['name']
+			type_schedule = const.types_schedule[1] in call.message.text
 
 			start_weekday = const.get_day_week(call.message.text[call.message.text.rfind(' ') + 1:])
-
 			end_weekday = start_weekday + 1
-
 			if start_weekday == 6:
 				end_weekday = start_weekday
 				start_weekday = 0
 
-			groups = database.get_subscribe_group(chat_id) if group_id == 'all' else [{'id': int(group_id)}]
-
-			message = call.message.text + ' для '
-
-			message += 'всех' if group_id == 'all' else database.get_groups(int(group_id))[0]['name']
-
-			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=message)
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes)
 
 			for group in groups:
-				for weekday in range(start_weekday,end_weekday):
-					message = weekday_schedule(group['id'], weekday, const.types_schedule[1] in call.message.text)
-					bot.send_message(chat_id, message)
+				for weekday in range(start_weekday, end_weekday):
+					mes = weekday_schedule(group['id'], weekday, type_schedule)
+					bot.send_message(chat_id, mes)
 
 		#добавление подписки на преподавателя
 		if 'add_teacher' in call.data:
@@ -204,9 +247,29 @@ def callback_inline(call):
 		#удаление подписки на преподавателя
 		if 'del_teacher' in call.data:
 			teacher_id = call.data[13:]
+			mes = 'Удалена подписка на ' + database.get_teachers(teacher_id)[0]['name']
 			database.del_subscribe_teacher(chat_id, teacher_id)
-			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Удалена подписка на ' + database.get_teachers(teacher_id)[0]['name'])
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes)
 
+		if 'sch_teacher' in call.data:
+			teacher_id = call.data[13:]
+			teachers = database.get_subscribe_teacher(chat_id) if teacher_id == 'all' else [{'id': int(teacher_id)}]
+			mes = call.message.text + ' для '
+			mes += 'всех' if teacher_id == 'all' else database.get_teachers(int(teacher_id))[0]['name']
+			type_schedule = const.types_schedule[1] in call.message.text
+
+			start_weekday = const.get_day_week(call.message.text[call.message.text.rfind(' ') + 1:])
+			end_weekday = start_weekday + 1
+			if start_weekday == 6:
+				end_weekday = start_weekday
+				start_weekday = 0
+
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes)
+
+			for teacher in teachers:
+				for weekday in range(start_weekday, end_weekday):
+					mes = teacher_schedule(teacher['id'], weekday, type_schedule)
+					bot.send_message(chat_id, mes)
 
 
 #обработка меню
@@ -314,18 +377,16 @@ def repeat_all_messages(message):
 
 	#расписание на всю неделю
 	elif 'на неделю' in message.text:
-		if groups != 0:
-			if groups == 1:
-				group_id = database.get_subscribe_group(chat_id)[0]['id']
-				for i in range(0, 6):
-					mes = weekday_schedule(group_id, i, const.types_schedule[1] in message.text)
-					bot.send_message(chat_id, mes)
-				return
-
-			else:
-				keyboard = keyboards.inline_keyboard_subscribe_group_schedule(chat_id)
-				mes = const.types_schedule[0] + ' на' if (const.types_schedule[0] in message.text) else const.types_schedule[1] + ' на'
-				mes += ' неделю'
+		if groups == 1:
+			group_id = database.get_subscribe_group(chat_id)[0]['id']
+			for i in range(0, 6):
+				mes = weekday_schedule(group_id, i, const.types_schedule[1] in message.text)
+				bot.send_message(chat_id, mes)
+			return
+		elif groups > 1:
+			keyboard = keyboards.inline_keyboard_subscribe_group_schedule(chat_id)
+			mes = const.types_schedule[0] + ' на' if (const.types_schedule[0] in message.text) else const.types_schedule[1] + ' на'
+			mes += ' неделю'
 		else:
 			mes = 'Сначала добавь подписку на группу'
 
@@ -342,14 +403,27 @@ def repeat_all_messages(message):
 		else:
 			mes = 'Сначала добавь подписку на преподавателя'
 
-	#расписание на преподавателя
-	elif message.text == 'Расписание без замен на преподавателя':
-		if teachers != 0:
-			teacher_id = database.get_subscribe_teacher(chat_id)[0]['id']
-			mes = teacher_schedule(teacher_id)
+	#расписание на преподавателя без замен
+	elif message.text == 'Расписание преподавателя без замен':
+		if teachers > 0:
+			keyboard = keyboards.inline_keyboard_day_week()
+			mes = 'Расписание преподавателя без замен на'
 		else:
 			mes = 'Сначала добавь подписку на преподавателя'
+		'''if teachers == 1:
+			teacher_id = database.get_subscribe_teacher(chat_id)[0]['id']
+			mes = teacher_schedule(teacher_id)
+		elif teachers > 1:
+			keyboard = keyboards.inline_keyboard_subscribe_teacher_schedule(chat_id)
+			mes = '''
 
+	#расписание на преподавателя c заменами
+	elif message.text == 'Расписание преподавателя с заменами':
+		if teachers > 0:
+			keyboard = keyboards.inline_keyboard_day_week()
+			mes = 'Расписание преподавателя с заменами на'
+		else:
+			mes = 'Сначала добавь подписку на преподавателя'
 
 	bot.send_message(chat_id, mes, reply_markup=keyboard)
 
