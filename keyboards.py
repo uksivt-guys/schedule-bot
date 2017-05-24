@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import datetime
 import json
 
 from database import db as database
@@ -17,7 +17,9 @@ def user_menu():
 def admin_menu(chat_id=0):
     markup = types.ReplyKeyboardMarkup()
     markup.row(HUD.BUTTON_MESSAGE)
+    markup.row(HUD.BUTTON_MESSAGE_GROUP)
     markup.row(HUD.BUTTON_REPLACEMENT)
+    markup.row(HUD.BUTTON_REPLACEMENT_VIEW)
     if(chat_id != 0 and Users[chat_id].replacements != 0):
         markup.row(HUD.BUTTON_PUBLISH_REPLACEMENTS)
     markup.row(HUD.BUTTON_LOADFILE)
@@ -39,10 +41,19 @@ def replacement_menu(state, rep):
             i = i[0]
             markup.add(types.InlineKeyboardButton(text=i, callback_data=json.dumps({0:STATES.SELECT_GROUP,1:i})))
     elif(state==STATES.SELECT_DAY):
+        weekday = datetime.datetime.today().weekday()
         days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]
         for i in range(0, len(days)):
             i = days[i]
-            markup.add(types.InlineKeyboardButton(text=i, callback_data=json.dumps({0:STATES.SELECT_DAY,1:i},ensure_ascii=False)))
+            text = i
+            if (rep.getWeekDay(i) == weekday):
+                text = i + " (Сегодня)"
+            if (weekday == 6):
+                weekday = -1
+            if (rep.getWeekDay(i) == weekday+1):
+                text = i + " (Завтра)"
+                markup.add(types.InlineKeyboardButton(text=text, callback_data=json.dumps({0: STATES.SELECT_DAY, 1: i},
+                                                                                          ensure_ascii=False)))
     elif(state==STATES.SELECT_SUBJECT):
         subjects = rep.getSubjectsNames()
 
@@ -162,3 +173,10 @@ def keyboard_menu_settings():
     keyboard.row('Удалить подписку на группу', 'Удалить подписку на преподавателя')
     keyboard.row('Назад')
     return keyboard
+
+#text
+def group_message_menu(groups):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    for i in groups:
+        markup.add(types.InlineKeyboardButton(text=groups[i], callback_data=json.dumps({0:"message_group", 1:i})))
+    return markup

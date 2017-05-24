@@ -226,7 +226,7 @@ class Replacement:
             names[data[i][1]] = self.getSubject(data[i][0])
         for i in self.all_replacements:
             if(self.getWeekDay(self.day) == i.day.weekday()):
-                names[i.number] = self.getSubject(i.subject)
+                names[i.number] = self.getSubject(i.subject) + " (" + names[i.number] + ")"
         cursor.close()
 
     def getSubjectsNames(self):

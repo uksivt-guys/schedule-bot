@@ -88,6 +88,9 @@ def msg_handler(message):
         markup = keyboards.replacement_menu(0, rep)
         bot.send_message(message.chat.id, "Выберете курс", reply_markup=markup)
     elif (Users[chat_id].Action == HUD.ACTION_MESSAGE):
+        if (text == "отм"):
+            Users[chat_id].Action = 0
+            return
         send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
         for u in Users:
             try:
@@ -97,8 +100,12 @@ def msg_handler(message):
         Users[chat_id].Action = 0
         return
     elif (Users[chat_id].Action == HUD.ACTION_MESSAGE_GROUP_TYPING):
+        if (text == "отм"):
+            Users[chat_id].Action = 0
+            return
         send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
         messageGroup.sendGroupMessage(bot_2, send_msg, Users[chat_id].message_group)
+        Users[chat_id].Action = 0
     elif not (rep==0) and (rep.typingRoom):
         bot.send_message(chat_id, "Введите аудиторию")
         rep.setRoom(text)
@@ -113,10 +120,10 @@ def cllbck(res):
     key = res.data['0']
     value = res.data['1']
     message = res.message
-    if(key=="message_group"):
+    if (key == "message_group"):
         Users[message.chat.id].Action = HUD.ACTION_MESSAGE_GROUP_TYPING
         Users[message.chat.id].message_group = value
-        bot.send_message(message.chat.id, "Введите сообщение")
+        bot.send_message(message.chat.id, HUD.SEND_MSG)
         return
     rep = Users[message.chat.id].replacements
     if(rep==0):
