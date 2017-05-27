@@ -45,10 +45,10 @@ class  SqlDB(object):
 		return gen_schedule
 
 	#получение замен на день недели
-	def get_replacement(self, group_id, num_weekday):
+	def get_replacement(self, group_id, date):
 		sql = 'SELECT replacements.lesson_number, replacements.group_type, subjects.name, teachers.name, replacements.room'
 		sql += ' FROM replacements INNER JOIN teachers ON replacements.teacher_id = teachers.id INNER JOIN subjects ON replacements.subject_id = subjects.id'
-		sql += ' WHERE group_id = ' + str(group_id) + ' AND day >= date(now()) AND weekday(day) = ' + str(num_weekday) + ' order by lesson_number;'
+		sql += ' WHERE group_id = ' + str(group_id) + ' AND day = \'' + date.strftime("%Y-%m-%d") + '\' order by lesson_number;'
 		result = self.__sql_query_with_result__(sql)
 		replacements = list()
 		for replacement in result:
@@ -59,7 +59,7 @@ class  SqlDB(object):
 				'teacher_name': replacement[3],
 				'room': replacement[4]
 				})
-		return teacher_replacements
+		return replacements
 
 	#получение расписания преподавателя
 	def get_teacher_schedule(self, teacher_id, num_weekday):
