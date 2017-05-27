@@ -107,13 +107,13 @@ def output_doc_replacement(replacement, schedule):
 
 @app.route('/today/')
 def replacements_today():
-	date = date.today()
-	return replacements_to_date(date.year, date.month, date.day)
+	dt = date.today()
+	return replacements_to_date(dt.year, dt.month, dt.day)
 
 @app.route('/tomorrow/')
 def replacements_tomorrow():
-	date = date.today() + timedelta(days=1)
-	return replacements_to_date(date.year, date.month, date.day)
+	dt = date.today() + timedelta(days=1)
+	return replacements_to_date(dt.year, dt.month, dt.day)
 
 @app.route('/<int:year>/<int:month>/<int:day>/')
 def replacements_to_date(year, month, day):

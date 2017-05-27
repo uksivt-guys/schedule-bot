@@ -6,6 +6,26 @@
 		ЗАМЕНЫ НА {{ date }}
 	</h1>
 	<table border="1" rules="all" cellspacing="0">
+		<tr>
+			<th>
+				Пара
+			</th>
+			<th>
+				Заменяемая дисциплина
+			</th>
+			<th>
+				Заменяемый преподаватель
+			</th>
+			<th>
+				Заменяющая дисциплина
+			</th>
+			<th>
+				Заменяющий преподаватель
+			</th>
+			<th>
+				Аудитория
+			</th>
+		</tr>
 		{% for group_replacement in replacements %}
 			<tr>
 				<th colspan="6">
