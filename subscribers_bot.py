@@ -2,7 +2,7 @@
 
 import telebot
 from telebot import types
-from datetime import datetime, date, time
+from datetime import datetime, date, timedelta
 
 import const
 import keyboards
@@ -68,12 +68,16 @@ def search_lesson(schedule, lesson_num, group_type = -1):
 #формирование расписания с заменами (type_schedule = True)/без (type_schedule = False)
 def weekday_schedule(group_id, num_weekday, type_schedule = False):
 	mes = '----На ' + const.get_day_week(num_weekday) + ' для ' + database.get_groups(group_id)[0]['name'] + '----\n'
-
+ 
 	gen_schedule = database.get_schedule(group_id, num_weekday)
+
+	now_weekday = datetime.weekday(datetime.now())
+	date_delta = timedelta(days=num_weekday - now_weekday) if num_weekday >= now_weekday else timedelta(days=7 - now_weekday + num_weekday)
+	date_replacements = datetime.now() + date_delta
 
 	#тип расписания(с заменами - true/без замен - false)
 	if type_schedule:
-		replacements = database.get_replacement(group_id, num_weekday)
+		replacements = database.get_replacement(group_id, date_replacements)
 
 	for lesson in range(0, 7):
 		group_type_sched = -1

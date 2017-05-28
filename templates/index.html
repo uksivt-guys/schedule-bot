@@ -1,0 +1,60 @@
+<!doctype html>
+<title>Hello from Flask</title>
+<body>
+	<div class='page' style="width: 595px; margin: auto; text-align: center;">
+	<h1>
+		ЗАМЕНЫ НА {{ date }}
+	</h1>
+	<table border="1" rules="all" cellspacing="0">
+		<tr>
+			<th>
+				Пара
+			</th>
+			<th>
+				Заменяемая дисциплина
+			</th>
+			<th>
+				Заменяемый преподаватель
+			</th>
+			<th>
+				Заменяющая дисциплина
+			</th>
+			<th>
+				Заменяющий преподаватель
+			</th>
+			<th>
+				Аудитория
+			</th>
+		</tr>
+		{% for group_replacement in replacements %}
+			<tr>
+				<th colspan="6">
+					{{ group_replacement['group'] }}
+				</th>
+			</tr>
+			{% for replacement in group_replacement['replacement'] %}
+				<tr>
+					<td>
+						{{ replacement['lesson_number'] }}
+					</td>
+					<td>
+						{{ replacement['schedule_subject'] }}
+					</td>
+					<td>
+						{{ replacement['schedule_teacher'] }}
+					</td>
+					<td>
+						{{ replacement['replacement_subject'] }}
+					</td>
+					<td>
+						{{ replacement['replacement_teacher'] }}
+					</td>
+					<td>
+						{{ replacement['replacement_room'] }}
+					</td>
+				</tr>
+			{% endfor %}
+		{% endfor %}
+	</table>
+	</div>
+</body>
