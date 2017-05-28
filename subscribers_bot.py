@@ -237,6 +237,13 @@ def callback_inline(call):
 					mes = weekday_schedule(group['id'], weekday, type_schedule)
 					bot.send_message(chat_id, mes)
 
+		#выбор первой буквы имени преподавателя
+		if 'teachers_on' in call.data:
+			first_char = call.data[13]
+			keyboard = keyboards.inline_keyboard_teachers(first_char=first_char)
+			mes = 'Выбери преподавателя, на которого будешь одписан'
+			bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=mes, reply_markup=keyboard)
+
 		#добавление подписки на преподавателя
 		if 'add_teacher' in call.data:
 			teacher_id = call.data[13:]
@@ -396,14 +403,14 @@ def repeat_all_messages(message):
 
 	#нажатие на кнопку добавления подписки на преподавателя
 	if message.text == 'Добавить подписку на преподавателя':
-		keyboard = keyboards.inline_keyboard_teachers()
-		mes = 'Выбери группу, на которую будешь подписан'
+		keyboard = keyboards.inline_keyboard_first_char_teachers()
+		mes = 'Выбери первую букву имени преподавателя, на которого хочешь подписаться'
 
 	#нажатие на кнопку удаления подписки на преподавателя
 	if message.text == 'Удалить подписку на преподавателя':
 		if teachers != 0:
 			keyboard = keyboards.inline_keyboard_subscribe_teacher_delete(chat_id)
-			mes = 'Выбери группу, на которую будешь подписан'
+			mes = 'Выбери преподавателя, от которого будешь одписан'
 		else:
 			mes = 'Сначала добавь подписку на преподавателя'
 

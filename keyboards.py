@@ -100,10 +100,18 @@ def inline_keyboard_groups():
         keyboard.add(group_button)
     return keyboard
 
-#инлайн клавиатура преподавателей
-def inline_keyboard_teachers():
+def inline_keyboard_first_char_teachers():
     keyboard = types.InlineKeyboardMarkup()
-    teachers = database.get_teachers()
+    first_chars = database.get_first_char_teachers()
+    for first_char in first_chars:
+        first_char_button = types.InlineKeyboardButton(text=first_char['first_char'], callback_data='teachers_on -' + str(first_char['first_char']))
+        keyboard.add(first_char_button)
+    return keyboard
+
+#инлайн клавиатура преподавателей
+def inline_keyboard_teachers(first_char = ''):
+    keyboard = types.InlineKeyboardMarkup()
+    teachers = database.get_teachers(first_char = first_char)
     for teacher in teachers:
         teacher_button = types.InlineKeyboardButton(text=teacher['name'], callback_data='add_teacher -' + str(teacher['id']))
         keyboard.add(teacher_button)
