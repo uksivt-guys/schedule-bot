@@ -5,20 +5,35 @@ from keys import KeysDB
 
 class  SqlDB(object):
 	"""docstring for  db"""
-	def __init__(self, host, user, passw, db):
-		self.connection = pymysql.connect(host, user, passw, db, charset='utf8')
+	def __init__(self, host, user, password, db):
+		class ConnectionData(object):
+			def __init__(self, host, user, password, db):
+				self.host = host
+				self.user = user
+				self.password = password
+				self.db = db
+
+		self.connection_data = ConnectionData(host, user, password, db)
+
+	def get_connection(self):
+		return pymysql.connect(self.connection_data.host, self.connection_data.user, self.connection_data.password,
+							   self.connection_data.db, charset='utf8')
 
 	def __sql_query_with_result__(self, sql):
-		cursor = self.connection.cursor()
+		connection = self.get_connection()
+		cursor = connection.cursor()
 		cursor.execute(sql)
 		result = cursor.fetchall()
+		connection.close()
 		return result
 
 	def __sql_query_non_result__(self, sql):
-		cursor = self.connection.cursor()
+		connection = self.get_connection()
+		cursor = connection.cursor()
 		cursor.execute(sql)
 		cursor.close()
-		self.connection.commit()
+		connection.commit()
+		connection.close()
 
 	#проверка пользователя на подписку на группу
 	def check_subscribe_group(self, chat_id):
@@ -59,7 +74,7 @@ class  SqlDB(object):
 				'teacher_name': replacement[3],
 				'room': replacement[4]
 				})
-		return teacher_replacements
+		return replacements
 
 	#получение расписания преподавателя
 	def get_teacher_schedule(self, teacher_id, num_weekday):
@@ -152,7 +167,7 @@ class  SqlDB(object):
 	#получение списка преподавателей
 	def get_teachers(self, teacher_id = 0):
 		sql = 'SELECT id, name FROM teachers '
-		sql += 'ORDER BY name;' if teacher_id == 0 else 'WHERE id = ' + str(teacher_id) + ' ORDER BY name;' 
+		sql += 'ORDER BY name;' if teacher_id == 0 else 'WHERE id = ' + str(teacher_id) + ' ORDER BY name;'
 		result = self.__sql_query_with_result__(sql)
 		teachers = list()
 		for teacher in result:

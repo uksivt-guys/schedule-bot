@@ -52,8 +52,8 @@ def replacement_menu(state, rep):
                 weekday = -1
             if (rep.getWeekDay(i) == weekday+1):
                 text = i + " (Завтра)"
-                markup.add(types.InlineKeyboardButton(text=text, callback_data=json.dumps({0: STATES.SELECT_DAY, 1: i},
-                                                                                          ensure_ascii=False)))
+            markup.add(types.InlineKeyboardButton(text=text, callback_data=json.dumps({0: STATES.SELECT_DAY, 1: i},
+                                                                                      ensure_ascii=False)))
     elif(state==STATES.SELECT_SUBJECT):
         subjects = rep.getSubjectsNames()
 

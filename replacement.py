@@ -147,11 +147,8 @@ class Replacement:
         self.room = 0
         self.teacher = 0
 
-    def typingRoom(self):
-        if(self.state==STATES.SELECT_ROOM):
-            return True
-        else:
-            return False
+    def is_typing_room(self):
+        return self.state==STATES.SELECT_ROOM
 
     def getWeekDay(self, day):
         if(day=="Понедельник"):
@@ -220,13 +217,18 @@ class Replacement:
 
     def getChanges(self, names):
         cursor = self.cursor()
-        cursor.execute("select subject_id, lesson_number from replacements where day='%s';" % (self.getDate(self.day)))
+        cursor.execute("select subject_id, lesson_number from replacements where day='%s' and group_id=%s;" % (self.getDate(self.day), self.getGroup()))
         data = cursor.fetchall()
-        for i in range(0, len(data)):
-            names[data[i][1]] = self.getSubject(data[i][0])
-        for i in self.all_replacements:
-            if(self.getWeekDay(self.day) == i.day.weekday()):
-                names[i.number] = self.getSubject(i.subject) + " (" + names[i.number] + ")"
+
+
+        for replacement_item in range(0, len(data)):
+            lesson_number = data[replacement_item][1]
+            lesson_subject = data[replacement_item][0]
+            if lesson_number in names:
+                names[lesson_number] = self.getSubject(lesson_subject) + " (" \
+                                                 + names[lesson_number] + ")"
+            else:
+                names[lesson_number] = self.getSubject(lesson_subject) + " ( — )"
         cursor.close()
 
     def getSubjectsNames(self):

@@ -106,8 +106,7 @@ def msg_handler(message):
         send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
         messageGroup.sendGroupMessage(bot_2, send_msg, Users[chat_id].message_group)
         Users[chat_id].Action = 0
-    elif not (rep==0) and (rep.typingRoom):
-        bot.send_message(chat_id, "Введите аудиторию")
+    elif rep!=0 and rep.is_typing_room():
         rep.setRoom(text)
         markup = keyboards.replacement_menu(rep.state, rep)
         bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
