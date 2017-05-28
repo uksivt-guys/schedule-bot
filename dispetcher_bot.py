@@ -150,7 +150,7 @@ if __name__ == '__main__':
         telegram_handle = telegram_logger.TelegramHandler()
         telegram_handle.setLevel(logging.WARNING)
         logger.addHandler(telegram_handle)
-        logger.warning('Бот подписчика запушен')
+        logger.warning('Бот диспетчера запушен')
         try:
             bot.polling(none_stop=True, interval=0)
         except Exception as e:
