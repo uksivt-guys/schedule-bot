@@ -12,6 +12,7 @@ import datetime
 from session import Users, AntiCrash
 from const import HUD 
 import messageGroup
+from notification_group import send_replacements_to_subscribers
 
 Admin.init(db)
 
@@ -87,6 +88,9 @@ def msg_handler(message):
         Users[chat_id].replacements = rep
         markup = keyboards.replacement_menu(0, rep)
         bot.send_message(message.chat.id, "Выберете курс", reply_markup=markup)
+    elif text == HUD.BUTTON_PUBLISH_REPLACEMENTS:
+        send_replacements_to_subscribers()
+        bot.send_message(chat_id, "Уведомления отправлены")
     elif (Users[chat_id].Action == HUD.ACTION_MESSAGE):
         if (text == "отм"):
             Users[chat_id].Action = 0

@@ -19,9 +19,8 @@ def admin_menu(chat_id=0):
     markup.row(HUD.BUTTON_MESSAGE)
     markup.row(HUD.BUTTON_MESSAGE_GROUP)
     markup.row(HUD.BUTTON_REPLACEMENT)
-    markup.row(HUD.BUTTON_REPLACEMENT_VIEW)
-    if(chat_id != 0 and Users[chat_id].replacements != 0):
-        markup.row(HUD.BUTTON_PUBLISH_REPLACEMENTS)
+    #markup.row(HUD.BUTTON_REPLACEMENT_VIEW)
+    markup.row(HUD.BUTTON_PUBLISH_REPLACEMENTS)
     markup.row(HUD.BUTTON_LOADFILE)
     markup.row(HUD.BUTTON_EXIT)
     return markup
