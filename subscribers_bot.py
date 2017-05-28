@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 
 import const
 import keyboards
-from keys import SUBSCRIBER_TOKEN
+from keys import SUBSCRIBER_TOKEN, TELERGRAM_LOGGER_ENABLED
 from database import db as database
 
 
@@ -440,4 +440,18 @@ def repeat_all_messages(message):
 
 
 if __name__ == '__main__':
-	bot.polling(none_stop=True)
+	if not TELERGRAM_LOGGER_ENABLED:
+		bot.polling(none_stop=True)
+	else:
+		import logging
+		import telegram_logger
+		import traceback
+		logger = logging.getLogger()
+		telegram_handle = telegram_logger.TelegramHandler()
+		telegram_handle.setLevel(logging.WARNING)
+		logger.addHandler(telegram_handle)
+		logger.warning('Бот подписчика запушен')
+		try:
+			bot.polling(none_stop=True)
+		except Exception as e:
+			telegram_logger.send_msg_to_tele_logger(traceback.format_exc())

@@ -138,4 +138,20 @@ def cllbck(res):
     else:
         bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
 
-bot.polling(none_stop=True,interval=0)
+
+if __name__ == '__main__':
+    if not keys.TELERGRAM_LOGGER_ENABLED:
+        bot.polling(none_stop=True, interval=0)
+    else:
+        import logging
+        import telegram_logger
+        import traceback
+        logger = logging.getLogger()
+        telegram_handle = telegram_logger.TelegramHandler()
+        telegram_handle.setLevel(logging.WARNING)
+        logger.addHandler(telegram_handle)
+        logger.warning('Бот диспетчера запушен')
+        try:
+            bot.polling(none_stop=True, interval=0)
+        except Exception as e:
+            telegram_logger.send_msg_to_tele_logger(traceback.format_exc())
