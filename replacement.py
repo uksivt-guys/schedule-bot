@@ -92,8 +92,6 @@ class Replacement:
             self.state = STATES.SELECT_ROOM
         if(key==STATES.END):
             self.checkForDublicates()
-            for i in self.all_replacements:
-                self.addReplacement(i)
             self.all_replacements = []
             self.state = STATES.UPDATED
         if(key==STATES.RETURN):
@@ -141,6 +139,7 @@ class Replacement:
         self.room = room
         self.state = STATES.SELECT_SUBJECT
         c = Change(self.getDate(self.day), self.replace, self.teacher, self.number, self.subgroup, self.room, self.getGroup())
+        self.addReplacement(c)
         self.all_replacements.append(c)
         self.replace = 0
         self.subgroup = 0
