@@ -164,10 +164,29 @@ class  SqlDB(object):
 				})
 		return subscribers
 
+	#получение первых букв имен преподавателей
+	def get_first_char_teachers(self):
+		sql = 'SELECT left(name,1) FROM schedule.teachers GROUP BY left(name,1);'
+		result = self.__sql_query_with_result__(sql)
+		first_chars = list()
+		for first_char in result:
+			first_chars.append({
+				'first_char': first_char[0]
+				})
+		return first_chars
+
 	#получение списка преподавателей
-	def get_teachers(self, teacher_id = 0):
+	def get_teachers(self, teacher_id = 0, first_char = ''):
 		sql = 'SELECT id, name FROM teachers '
-		sql += 'ORDER BY name;' if teacher_id == 0 else 'WHERE id = ' + str(teacher_id) + ' ORDER BY name;'
+
+		if teacher_id != 0:
+			sql += 'WHERE id = ' + str(teacher_id) + ' '
+
+		if first_char != '':
+			sql += 'WHERE ' if teacher_id == 0 else 'and '
+			sql += 'name LIKE \'' + first_char + '%\''
+
+		sql += 'ORDER BY name;'
 		result = self.__sql_query_with_result__(sql)
 		teachers = list()
 		for teacher in result:
