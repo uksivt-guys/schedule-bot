@@ -109,9 +109,9 @@ def weekday_schedule(group_id, num_weekday, type_schedule = False):
 def str_schedule_teacher(schedule):
 	str_sched = ''
 	if schedule['subject_name'] != '-':
-		str_sched += str(schedule['lesson_number']) + '. ' + str(schedule['group_name'])
+		str_sched += str(schedule['lesson_number']) + '. ' + str(schedule['subject_name']) + ' - ' + str(schedule['group_name'])
 		str_sched += ' (' + str(schedule['group_type']) + ' подгруппа)' if  schedule['group_type'] != 0 else ''
-		str_sched += ' - ' + str(schedule['room']) + '\n'
+		str_sched += ' (' + str(schedule['room']) + ')\n'
 	return str_sched
 
 
