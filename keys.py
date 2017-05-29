@@ -12,6 +12,10 @@ LOGGER_GROUP_ID = 0
 
 #путь к директории загрузок telegram
 PATH_TO_FILES = ''
+
+# путь для хранения файлов замен
+PATH_TO_PDF_FILES = ''
+
 #ключи базы данных
 class KeysDB(object):
 	HOST     = ''
