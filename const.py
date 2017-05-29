@@ -51,6 +51,7 @@ class HUD(object):
 	BUTTON_MESSAGE = u"Написать сообщение всем"
 	BUTTON_MESSAGE_GROUP = u"Написать сообщение группе"
 	BUTTON_REPLACEMENT = u"Добавить замены"
+	BUTTON_EXPORT_REPLACEMENT = u'Экспорт замен'
 	BUTTON_REPLACEMENT_VIEW = u"Показать все замены"
 	BUTTON_PUBLISH_REPLACEMENTS = 'Отправить уведомление об изменениях'
 	BUTTON_LOADFILE = u"Загрузить расписание"
