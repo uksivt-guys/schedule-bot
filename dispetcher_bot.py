@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import telebot
+import json
 import adminList as Admin
 from sqldata import db
 import keys
 import keyboards
 from loadSchedule import load_schedule
 from replacement import Replacement
-import json
-import datetime
 from session import Users, AntiCrash
 from const import HUD
 import messageGroup
 from notification_group import send_replacements_to_subscribers
-import flask_app
-import pdfkit
 
 Admin.init(db)
 
@@ -26,7 +23,7 @@ bot_2 = telebot.TeleBot(keys.SUBSCRIBER_TOKEN)
 def initilization(message):
     chat_id = message.chat.id
     AntiCrash(chat_id)
-    if (Admin.isAdmin(chat_id)):
+    if(Admin.isAdmin(chat_id)):
         markup = keyboards.admin_menu()
         bot.send_message(message.chat.id, HUD.START, reply_markup=markup)
     else:
@@ -40,7 +37,7 @@ def helping(message):
 
 
 @bot.message_handler(commands=["myid"])
-def myid(message):
+def my_id(message):
     bot.send_message(message.chat.id, message.chat.id)
 
 
@@ -101,7 +98,8 @@ def msg_handler(message):
         if (text == "отм"):
             Users[chat_id].Action = 0
             return
-        send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
+        send_msg = message.chat.first_name
+        send_msg += " " + message.chat.last_name + ": " + text
         for u in Users:
             try:
                 bot_2.send_message(u, send_msg)
@@ -113,29 +111,15 @@ def msg_handler(message):
         if (text == "отм"):
             Users[chat_id].Action = 0
             return
-        send_msg = message.chat.first_name + " " + message.chat.last_name + ": " + text
-        messageGroup.sendGroupMessage(bot_2, send_msg, Users[chat_id].message_group)
+        send_msg = message.chat.first_name
+        send_msg += " " + message.chat.last_name + ": " + text
+        messageGroup.sendGroupMessage(bot_2, send_msg,
+                                      Users[chat_id].message_group)
         Users[chat_id].Action = 0
-    elif text == HUD.BUTTON_EXPORT_REPLACEMENT:
-        with flask_app.app.app_context():
-            today = datetime.datetime.now().date()
-            today_repacment = flask_app.replacements_today()
-            file_name = '{}/замены-{}.pdf'.format(keys.PATH_TO_PDF_FILES, today.isoformat())
-            pdfkit.from_string(today_repacment, file_name)
-            doc = open(file_name, 'rb')
-            bot.send_document(chat_id, doc)
-
-            tomorrow = datetime.datetime.now().date() + datetime.timedelta(days=1)
-            tomorrow_repacment = flask_app.replacements_tomorrow()
-            file_name = '{}замены-{}.pdf'.format(keys.PATH_TO_PDF_FILES, tomorrow.isoformat())
-            pdfkit.from_string(tomorrow_repacment, file_name)
-            doc = open(file_name, 'rb')
-            bot.send_document(chat_id, doc)
-
     elif rep != 0 and rep.is_typing_room():
-        rep.setRoom(text)
+        rep.set_room(text)
         markup = keyboards.replacement_menu(rep.state, rep)
-        bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
+        bot.send_message(message.chat.id, rep.get_text(), reply_markup=markup)
     else:
         bot.send_message(chat_id, HUD.HELP_INFO)
 
@@ -152,15 +136,14 @@ def cllbck(res):
         bot.send_message(message.chat.id, HUD.SEND_MSG)
         return
     rep = Users[message.chat.id].replacements
-    if (rep == 0):
+    if(rep == 0):
         return
     state = rep.action(key, value)
     markup = keyboards.replacement_menu(state, rep)
-    if (markup == 0):
-        bot.send_message(message.chat.id, rep.getText())
+    if(markup == 0):
+        bot.send_message(message.chat.id, rep.get_text())
     else:
-        bot.send_message(message.chat.id, rep.getText(), reply_markup=markup)
-
+        bot.send_message(message.chat.id, rep.get_text(), reply_markup=markup)
 
 if __name__ == '__main__':
     if not keys.TELERGRAM_LOGGER_ENABLED:
@@ -169,7 +152,6 @@ if __name__ == '__main__':
         import logging
         import telegram_logger
         import traceback
-
         logger = logging.getLogger()
         telegram_handle = telegram_logger.TelegramHandler()
         telegram_handle.setLevel(logging.WARNING)

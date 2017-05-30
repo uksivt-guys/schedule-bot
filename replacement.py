@@ -11,8 +11,8 @@ class STATES:
     SELECT_REPLACE = 4
     SELECT_SUBGROUP = 5
     SELECT_ROOM = 6
-    RETURN = 10
     END = 9
+    RETURN = 10
     UPDATED = 11
 
 class Change:
@@ -23,6 +23,7 @@ class Change:
     group_type = 0
     room = 0
     group = 0
+
     def __init__(self, day, subject, teacher, number, group_type, room, group):
         self.day = day
         self.subject = subject
@@ -48,18 +49,18 @@ class Replacement:
     def cursor(self):
         return self.db.cursor()
 
-    def getText(self):
-        if(self.state==STATES.SELECT_COURSE):
+    def get_text(self):
+        if(self.state == STATES.SELECT_COURSE):
             return "Выберете курс"
-        if(self.state==STATES.SELECT_GROUP):
+        if(self.state == STATES.SELECT_GROUP):
             return "Выберете группу"
-        elif(self.state==STATES.SELECT_DAY):
+        elif(self.state == STATES.SELECT_DAY):
             return "Выберете день недели"
-        elif(self.state==STATES.SELECT_SUBJECT):
+        elif(self.state == STATES.SELECT_SUBJECT):
             return "Выберете предмет"
-        elif(self.state==STATES.SELECT_REPLACE):
+        elif(self.state == STATES.SELECT_REPLACE):
             return "Выберете заменяемый предмет"
-        elif(self.state==STATES.SELECT_SUBGROUP):
+        elif(self.state == STATES.SELECT_SUBGROUP):
             return "Выберете подгруппу"
         elif (self.state == STATES.SELECT_ROOM):
             return "Введите аудиторию"
@@ -67,42 +68,42 @@ class Replacement:
             return "Расписание обновлено!"
 
     def action(self, key, value):
-        if(key==STATES.SELECT_COURSE):
+        if(key == STATES.SELECT_COURSE):
             self.state = STATES.SELECT_GROUP
             self.course = value
-        if(key==STATES.SELECT_GROUP):
+        if(key == STATES.SELECT_GROUP):
             self.state = STATES.SELECT_DAY
             self.group = value
-        if(key==STATES.SELECT_DAY):
+        if(key == STATES.SELECT_DAY):
             self.state = STATES.SELECT_SUBJECT
             self.day = value
-        if(key==STATES.SELECT_SUBJECT):
+        if(key == STATES.SELECT_SUBJECT):
             self.state = STATES.SELECT_REPLACE
             self.number = value
-        if(key==STATES.SELECT_REPLACE):
+        if(key == STATES.SELECT_REPLACE):
             self.replace = value
-            self.teacher = self.getTeacher()
+            self.teacher = self.get_teacher()
             if not (self.replace==0):
-                if(self.isSubgroups()):
+                if(self.is_subgroups()):
                     self.state = STATES.SELECT_SUBGROUP
                 else:
                     self.state = STATES.SELECT_ROOM
-        if(key==STATES.SELECT_SUBGROUP):
+        if(key == STATES.SELECT_SUBGROUP):
             self.subgroup = value
             self.state = STATES.SELECT_ROOM
-        if(key==STATES.END):
-            self.checkForDublicates()
+        if(key == STATES.END):
+            self.check_for_dublicates()
             self.all_replacements = []
             self.state = STATES.UPDATED
-        if(key==STATES.RETURN):
+        if(key == STATES.RETURN):
             self.state -= 1
             if (self.replace!=0):
-                if not (self.isSubgroups()):
+                if not (self.is_subgroups()):
                     self.state -= 1
 
         return self.state
 
-    def checkForDublicates(self):
+    def check_for_dublicates(self):
         new_array = []
         for i in range(0, len(self.all_replacements)):
             for j in range((i+1), len(self.all_replacements)):
@@ -112,7 +113,7 @@ class Replacement:
         if(len(self.all_replacements) > 1):
             self.all_replacements = new_array
 
-    def getDate(self, day):
+    def get_date(self, day):
         weekday = datetime.datetime.today().weekday()
         days = 0
         day = self.getWeekDay(day)
@@ -123,11 +124,10 @@ class Replacement:
             weekday += 1
         return (datetime.datetime.today() + datetime.timedelta(days=days)).date()
 
-    def addReplacement(self, repl):
+    def add_replacement(self, repl):
         cursor = self.cursor()
         cursor.execute("select * from replacements where day='%s' and lesson_number=%d;" % (repl.day, repl.number) )
         data = cursor.fetchall()
-        #print(cursor.rowcount)
         if (len(data) == 0):
             cursor.execute("insert into replacements values(null, '%s', %d, %d, %d, %d, '%s', %d);" % (repl.day, repl.subject, repl.teacher, repl.number, repl.group_type, repl.room, repl.group))
         else:
@@ -135,11 +135,11 @@ class Replacement:
         self.db.commit()
         cursor.close()
 
-    def setRoom(self, room):
+    def set_room(self, room):
         self.room = room
         self.state = STATES.SELECT_SUBJECT
-        c = Change(self.getDate(self.day), self.replace, self.teacher, self.number, self.subgroup, self.room, self.getGroup())
-        self.addReplacement(c)
+        c = Change(self.get_date(self.day), self.replace, self.teacher, self.number, self.subgroup, self.room, self.get_group())
+        self.add_replacement(c)
         self.all_replacements.append(c)
         self.replace = 0
         self.subgroup = 0
@@ -147,35 +147,35 @@ class Replacement:
         self.teacher = 0
 
     def is_typing_room(self):
-        return self.state==STATES.SELECT_ROOM
+        return self.state == STATES.SELECT_ROOM
 
-    def getWeekDay(self, day):
-        if(day=="Понедельник"):
+    def get_weekday(self, day):
+        if(day == "Понедельник"):
             day = 0
-        elif(day=="Вторник"):
+        elif(day == "Вторник"):
             day = 1
-        elif(day=="Среда"):
+        elif(day == "Среда"):
             day = 2
-        elif(day=="Четверг"):
+        elif(day == "Четверг"):
             day = 3
-        elif(day=="Пятница"):
+        elif(day == "Пятница"):
             day = 4
-        elif(day=="Суббота"):
+        elif(day == "Суббота"):
             day = 5
         return day
 
-    def getTeacher(self):
+    def get_teacher(self):
         if (self.replace == 0):
             self.teacher = 0
             self.setRoom(0)
             return 0
         cursor = self.cursor()
-        cursor.execute("select teacher_id from general_schedule where subject_id=%d and group_id=%d;" % (self.replace, self.getGroup()))
+        cursor.execute("select teacher_id from general_schedule where subject_id=%d and group_id=%d;" % (self.replace, self.get_group()))
         data = cursor.fetchall()[0][0]
         cursor.close()
         return data
 
-    def isSubgroups(self):
+    def is_subgroups(self):
         if (self.replace == 0):
             return False
         cursor = self.cursor()
@@ -188,16 +188,16 @@ class Replacement:
         cursor.close()
         return False
 
-    def getGroup(self):
+    def get_group(self):
         cursor = self.cursor()
         cursor.execute("select id from groups where name='%s';"%(self.group))
         data = cursor.fetchall()
         cursor.close()
         return data[0][0]
 
-    def getAllSubjects(self):
+    def get_all_subjects(self):
         cursor = self.cursor()
-        cursor.execute("select subject_id from general_schedule where group_id=%d" % (self.getGroup()))
+        cursor.execute("select subject_id from general_schedule where group_id=%d" % (self.get_group()))
         data = cursor.fetchall()
         subjects = dict()
         for i in data:
@@ -214,12 +214,10 @@ class Replacement:
         name = cursor.fetchall()[0][0]
         return name
 
-    def getChanges(self, names):
+    def get_changes(self, names):
         cursor = self.cursor()
-        cursor.execute("select subject_id, lesson_number from replacements where day='%s' and group_id=%s;" % (self.getDate(self.day), self.getGroup()))
+        cursor.execute("select subject_id, lesson_number from replacements where day='%s' and group_id=%s;" % (self.get_date(self.day), self.get_group()))
         data = cursor.fetchall()
-
-
         for replacement_item in range(0, len(data)):
             lesson_number = data[replacement_item][1]
             lesson_subject = data[replacement_item][0]
@@ -230,18 +228,18 @@ class Replacement:
                 names[lesson_number] = self.getSubject(lesson_subject) + " ( — )"
         cursor.close()
 
-    def getSubjectsNames(self):
+    def get_subjects_names(self):
         cursor = self.cursor()
-        cursor.execute("select subject_id, lesson_number from general_schedule where weekday=%d and group_id=%d;" % (self.getWeekDay(self.day), self.getGroup()))
+        cursor.execute("select subject_id, lesson_number from general_schedule where weekday=%d and group_id=%d;" % (self.get_weekday(self.day), self.get_group()))
         data = cursor.fetchall()
         names = dict()
         for i in range(0, len(data)):
             names[data[i][1]] = self.getSubject(data[i][0])
-        self.getChanges(names)
+        self.get_changes(names)
         cursor.close()
         return names
 
-    def getGroupsNames(self):
+    def get_groups_names(self):
         cursor = self.cursor()
         cursor.execute("select name from groups where left(name, 1)='%d';" % (self.course))
         data = cursor.fetchall()

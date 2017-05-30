@@ -19,7 +19,6 @@ def admin_menu(chat_id=0):
     markup.row(HUD.BUTTON_MESSAGE)
     markup.row(HUD.BUTTON_MESSAGE_GROUP)
     markup.row(HUD.BUTTON_REPLACEMENT)
-    markup.row(HUD.BUTTON_EXPORT_REPLACEMENT)
     #markup.row(HUD.BUTTON_REPLACEMENT_VIEW)
     markup.row(HUD.BUTTON_PUBLISH_REPLACEMENTS)
     markup.row(HUD.BUTTON_LOADFILE)
@@ -32,49 +31,48 @@ rep = Replacement()
 
 def replacement_menu(state, rep):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    if(state==STATES.SELECT_COURSE):
+    if(state == STATES.SELECT_COURSE):
         for i in range(1, 5):
             markup.add(types.InlineKeyboardButton(text=str(i), callback_data=json.dumps({0: STATES.SELECT_COURSE, 1: i})))
-    elif(state==STATES.SELECT_GROUP):
-        names = rep.getGroupsNames()
+    elif(state == STATES.SELECT_GROUP):
+        names = rep.get_groups_names()
         for i in names:
             i = i[0]
             markup.add(types.InlineKeyboardButton(text=i, callback_data=json.dumps({0:STATES.SELECT_GROUP,1:i})))
-    elif(state==STATES.SELECT_DAY):
+    elif(state == STATES.SELECT_DAY):
         weekday = datetime.datetime.today().weekday()
         days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]
         for i in range(0, len(days)):
             i = days[i]
             text = i
-            if (rep.getWeekDay(i) == weekday):
+            if (rep.get_weekday(i) == weekday):
                 text = i + " (Сегодня)"
             if (weekday == 6):
                 weekday = -1
-            if (rep.getWeekDay(i) == weekday+1):
+            if (rep.get_weekday(i) == weekday+1):
                 text = i + " (Завтра)"
             markup.add(types.InlineKeyboardButton(text=text, callback_data=json.dumps({0: STATES.SELECT_DAY, 1: i},
                                                                                       ensure_ascii=False)))
-    elif(state==STATES.SELECT_SUBJECT):
-        subjects = rep.getSubjectsNames()
+    elif(state == STATES.SELECT_SUBJECT):
+        subjects = rep.get_subjects_names()
 
         for i in range(0, 6):
             if i in subjects:
                 name = subjects[i]
                 text = "%d. %s" % (i, name)
             else:
-                name = "-"
                 text = "%d. -" % (i)
             markup.add(types.InlineKeyboardButton(text=text, callback_data=json.dumps({0:STATES.SELECT_SUBJECT, 1:i}, ensure_ascii=False)))
-    elif(state==STATES.SELECT_REPLACE):
-        subjects = rep.getAllSubjects()
+    elif(state == STATES.SELECT_REPLACE):
+        subjects = rep.get_all_subjects()
         for i in subjects:
             markup.add(types.InlineKeyboardButton(text=subjects[i], callback_data=json.dumps({0:STATES.SELECT_REPLACE, 1:i})))
-    elif(state==STATES.SELECT_SUBGROUP):
+    elif(state == STATES.SELECT_SUBGROUP):
         markup.add(types.InlineKeyboardButton(text="Все", callback_data=json.dumps({0:STATES.SELECT_SUBGROUP, 1:0})))
         markup.add(types.InlineKeyboardButton(text="1 Подгруппа", callback_data=json.dumps({0: STATES.SELECT_SUBGROUP, 1: 1})))
         markup.add(types.InlineKeyboardButton(text="2 Подгруппа", callback_data=json.dumps({0: STATES.SELECT_SUBGROUP, 1: 2})))
 
-    if not (state==STATES.SELECT_COURSE):
+    if not (state == STATES.SELECT_COURSE):
         markup.add(types.InlineKeyboardButton(text="Назад", callback_data=json.dumps({0:STATES.RETURN, 1:0})))
     else:
         markup.add(types.InlineKeyboardButton(text="Закончить", callback_data=json.dumps({0:STATES.END, 1:0})))
