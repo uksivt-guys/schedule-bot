@@ -1,17 +1,28 @@
-# -*- coding: utf-8 -*-
-day_week = {
-	0: 'понедельник',
-	1: 'вторник',
-	2: 'среду',
-	3: 'четверг',
-	4: 'пятницу',
-	5: 'субботу',
-	6: 'неделю'
-}
+def get_day_week(weekday):
+	if type(weekday) == int:
+		return {
+		0: 'понедельник',
+		1: 'вторник',
+		2: 'среду',
+		3: 'четверг',
+		4: 'пятницу',
+		5: 'субботу',
+		6: 'неделю'
+		}[weekday]
+	if type(weekday) == str:
+		return {
+		'понедельник': 0,
+		'вторник': 1,
+		'среду': 2,
+		'четверг': 3,
+		'пятницу': 4,
+		'субботу': 5,
+		'неделю': 6
+		}[weekday]
 
 types_schedule = {
-	0: 'Без замен',
-	1: 'С заменами'
+	0: 'без замен',
+	1: 'с заменами'
 }
 
 class LoadFileType(object):
@@ -34,13 +45,15 @@ class HUD(object):
 	LOADFILE_SUCCESS = u"Расписание обновлено!"
 	LOADFILE_ERROR = u"Расписание обновлено, но имеет ошибки! Проверьте следующие ячейки:\n"
 	HELP = u"Порядок работы с приложением:\n1. Нажмите кнопку \"Авторизоваться\"\n(Если по каким-то причинам ее нет, то введите повторно команду /start)\n2. Введите ключ авторизации (По умолчанию: 1010)\n3. Выберете нужное вам действие из списка в меню"
-	SEND_MSG = u"Тестовый бот, на который приходят сообщения - @dmtestdm_bot\nПеред вводом сообщения, подпишитесь на этого бота!!!\n\nВведите ваше сообщение"
-	REPLACEMENT_SELECT_GROUP = u"Выберете группу"
+	SEND_MSG = u"Введите ваше сообщение (Для отмены введите 'отм'):"
 
 	# BUTTONS
 	BUTTON_MESSAGE = u"Написать сообщение всем"
+	BUTTON_MESSAGE_GROUP = u"Написать сообщение группе"
 	BUTTON_REPLACEMENT = u"Добавить замены"
-	BUTTON_PUBLISH_REPLACEMENTS = u"Опубликовать замены"
+	BUTTON_EXPORT_REPLACEMENT = u'Экспорт замен'
+	BUTTON_REPLACEMENT_VIEW = u"Показать все замены"
+	BUTTON_PUBLISH_REPLACEMENTS = 'Отправить уведомление об изменениях'
 	BUTTON_LOADFILE = u"Загрузить расписание"
 	BUTTON_AUTH = u"Авторизоваться"
 	BUTTON_EXIT = u"Выйти"
@@ -48,4 +61,7 @@ class HUD(object):
 	# ACTIONS
 	ACTION_MENU = 0
 	ACTION_MESSAGE = 1
+	ACTION_MESSAGE_GROUP = 2
+	ACTION_MESSAGE_GROUP_TYPING = 3
+
 	ACTION_LOADFILE = LoadFileType()

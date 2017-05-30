@@ -5,35 +5,48 @@ from keys import KeysDB
 
 class  SqlDB(object):
 	"""docstring for  db"""
-	def __init__(self, host, user, passw, db):
-		self.connection = pymysql.connect(host, user, passw, db, charset='utf8')
+	def __init__(self, host, user, password, db):
+		class ConnectionData(object):
+			def __init__(self, host, user, password, db):
+				self.host = host
+				self.user = user
+				self.password = password
+				self.db = db
+
+		self.connection_data = ConnectionData(host, user, password, db)
+
+	def get_connection(self):
+		return pymysql.connect(self.connection_data.host, self.connection_data.user, self.connection_data.password,
+							   self.connection_data.db, charset='utf8')
 
 	def __sql_query_with_result__(self, sql):
-		cursor = self.connection.cursor()
+		connection = self.get_connection()
+		cursor = connection.cursor()
 		cursor.execute(sql)
 		result = cursor.fetchall()
+		connection.close()
 		return result
 
 	def __sql_query_non_result__(self, sql):
-		cursor = self.connection.cursor()
+		connection = self.get_connection()
+		cursor = connection.cursor()
 		cursor.execute(sql)
 		cursor.close()
-		self.connection.commit()
+		connection.commit()
+		connection.close()
 
-	#проверка пользователя на подписку
-	def check_chat_id(self, chat_id):
-		sql = 'SELECT group_id FROM schedule.subscribe_group where chat_id = ' + str(chat_id) + ';'
-		result = self.__sql_query_with_result__(sql)
-		if (len(result) != 0):
-			return result[0][0]
-		else:
-			return 0
+	#проверка пользователя на подписку на группу
+	def check_subscribe_group(self, chat_id):
+		return len(self.get_subscribe_group(chat_id))
+
+	def check_subscribe_teacher(self, chat_id):
+		return len(self.get_subscribe_teacher(chat_id))
 
 	#получение расписания на день недели
 	def get_schedule(self, group_id, num_weekday):
 		sql = 'SELECT general_schedule.lesson_number, general_schedule.group_type, subjects.name, teachers.name, general_schedule.room'
 		sql += ' FROM general_schedule INNER JOIN teachers ON general_schedule.teacher_id = teachers.id INNER JOIN subjects ON subjects.id = general_schedule.subject_id'
-		sql += ' WHERE group_id = ' + str(group_id) + ' and weekday = ' + str(num_weekday) + ' order by lesson_number;'
+		sql += ' WHERE group_id = ' + str(group_id) + ' AND weekday = ' + str(num_weekday) + ' order by lesson_number;'
 		result = self.__sql_query_with_result__(sql)
 		gen_schedule = list()
 		for schedule in result:
@@ -47,10 +60,10 @@ class  SqlDB(object):
 		return gen_schedule
 
 	#получение замен на день недели
-	def get_replacement(self, group_id, num_weekday):
+	def get_replacement(self, group_id, date):
 		sql = 'SELECT replacements.lesson_number, replacements.group_type, subjects.name, teachers.name, replacements.room'
 		sql += ' FROM replacements INNER JOIN teachers ON replacements.teacher_id = teachers.id INNER JOIN subjects ON replacements.subject_id = subjects.id'
-		sql += ' WHERE group_id = ' + str(group_id) + ' and day >= date(now()) and weekday(day) = ' + str(num_weekday) + ' order by lesson_number;'
+		sql += ' WHERE group_id = ' + str(group_id) + ' AND day = \'' + date.strftime("%Y-%m-%d") + '\' order by lesson_number;'
 		result = self.__sql_query_with_result__(sql)
 		replacements = list()
 		for replacement in result:
@@ -65,18 +78,39 @@ class  SqlDB(object):
 
 	#получение расписания преподавателя
 	def get_teacher_schedule(self, teacher_id, num_weekday):
-		sql = 'SELECT  lesson_number, groups.name, room'
+		sql = 'SELECT  weekday, lesson_number, subjects.name, groups.name, group_type, room'
 		sql += ' FROM general_schedule INNER JOIN subjects ON subjects.id = general_schedule.subject_id INNER JOIN groups ON groups.id = general_schedule.group_id'
-		sql += ' WHERE teacher_id = ' + str(teacher_id) + ' and weekday = ' + str(num_weekday) + ' order by lesson_number;'
+		sql += ' WHERE teacher_id = ' + str(teacher_id) + ' AND weekday = ' + str(num_weekday) + ' order by weekday, lesson_number;'
 		result = self.__sql_query_with_result__(sql)
 		teacher_schedule = list()
 		for schedule in result:
 			teacher_schedule.append({
-				'lesson_number': schedule[0],
-				'group_name': schedule[1],
-				'room': schedule[2]
+				'weekday': schedule[0],
+				'lesson_number': schedule[1],
+				'subject_name': schedule[2],
+				'group_name': schedule[3],
+				'group_type': schedule[4],
+				'room': schedule[5]
 				})
 		return teacher_schedule
+
+	#получение замен преподавателя
+	def get_teacher_replacements(self, teacher_id, num_weekday):
+		sql = 'SELECT  weekday(day), lesson_number, subjects.name, groups.name, group_type, room'
+		sql += ' FROM replacements INNER JOIN subjects ON subjects.id = subject_id INNER JOIN groups on groups.id = group_id'
+		sql += ' WHERE day >= date(now()) AND teacher_id = ' + str(teacher_id) + ' AND weekday(day) = ' + str(num_weekday) + ' ORDER BY day, lesson_number;'
+		result = self.__sql_query_with_result__(sql)
+		teacher_replacements = list()
+		for replacement in result:
+			teacher_replacements.append({
+				'weekday': replacement[0],
+				'lesson_number': replacement[1],
+				'subject_name': replacement[2],
+				'group_name': replacement[3],
+				'group_type': replacement[4],
+				'room': replacement[5]
+				})
+		return teacher_replacements
 
 	#получение имени преподавателя
 	def get_teacher_name(self, teacher_id):
@@ -84,8 +118,9 @@ class  SqlDB(object):
 		return self.__sql_query_with_result__(sql)[0][0]
 
 	#получение списка групп
-	def get_groups(self):
-		sql = 'SELECT id, name FROM groups ORDER BY name;'
+	def get_groups(self, group_id = 0):
+		sql = 'SELECT id, name FROM groups '
+		sql += 'ORDER BY name;' if group_id == 0 else 'WHERE id = ' + str(group_id) + ' ORDER BY name;'
 		result = self.__sql_query_with_result__(sql)
 		groups = list()
 		for group in result:
@@ -95,26 +130,28 @@ class  SqlDB(object):
 				})
 		return groups
 
-	#получение списка преподавателей
-	def get_teachers(self):
-		sql = 'SELECT id, name FROM teachers ORDER BY name;'
-		result = self.__sql_query_with_result__(sql)
-		teachers = list()
-		for teacher in result:
-			teachers.append({
-				'id': teacher[0],
-				'name': teacher[1]
-				})
-		return teachers
-
-	#подписка на группу
-	def set_group(self, chat_id, group_id):
-		sql = ''
-		if (not self.check_chat_id(chat_id)):
-			sql = 'INSERT INTO subscribe_group (chat_id, group_id) VALUES (' + str(chat_id) + ', ' + group_id + ');'
-		else:
-			sql = 'UPDATE subscribe_group SET group_id = ' + group_id + ' WHERE chat_id = ' + str(chat_id) + ';'
+	#добавление подписки на группу
+	def add_subscribe_group(self, chat_id, group_id):
+		sql = 'INSERT INTO subscribe_group (chat_id, group_id) VALUES (' + str(chat_id) + ', ' + str(group_id) + ');'
 		self.__sql_query_non_result__(sql)
+
+	#удаление подписки на группу
+	def del_subscribe_group(self, chat_id, group_id):
+		sql = 'DELETE FROM subscribe_group WHERE chat_id = ' + str(chat_id) + ' AND group_id = ' + str(group_id) + ';'
+		self.__sql_query_non_result__(sql)
+
+	#получение подписок на группы
+	def get_subscribe_group(self, chat_id):
+		sql = 'SELECT group_id, groups.name FROM subscribe_group INNER JOIN groups ON groups.id = subscribe_group.group_id '
+		sql += 'WHERE chat_id = ' + str(chat_id) + ';'
+		result = self.__sql_query_with_result__(sql)
+		groups = list()
+		for group in result:
+			groups.append({
+				'id': group[0],
+				'name': group[1]
+				})
+		return groups
 
 	#получение списка подписчиков на группу
 	def get_group_subscribers(self, group_id):
@@ -127,5 +164,59 @@ class  SqlDB(object):
 				})
 		return subscribers
 
+	#получение первых букв имен преподавателей
+	def get_first_char_teachers(self):
+		sql = 'SELECT left(name,1) FROM schedule.teachers GROUP BY left(name,1);'
+		result = self.__sql_query_with_result__(sql)
+		first_chars = list()
+		for first_char in result:
+			first_chars.append({
+				'first_char': first_char[0]
+				})
+		return first_chars
+
+	#получение списка преподавателей
+	def get_teachers(self, teacher_id = 0, first_char = ''):
+		sql = 'SELECT id, name FROM teachers '
+
+		if teacher_id != 0:
+			sql += 'WHERE id = ' + str(teacher_id) + ' '
+
+		if first_char != '':
+			sql += 'WHERE ' if teacher_id == 0 else 'and '
+			sql += 'name LIKE \'' + first_char + '%\''
+
+		sql += 'ORDER BY name;'
+		result = self.__sql_query_with_result__(sql)
+		teachers = list()
+		for teacher in result:
+			teachers.append({
+				'id': teacher[0],
+				'name': teacher[1]
+				})
+		return teachers
+
+	#добавление подписки на преподавателя
+	def add_subscribe_teacher(self, chat_id, teacher_id):
+		sql = 'INSERT INTO subscribe_teacher (chat_id, teacher_id) VALUES (' + str(chat_id) + ', ' + str(teacher_id) + ');'
+		self.__sql_query_non_result__(sql)
+
+	#удаление подписки на преподавателя
+	def del_subscribe_teacher(self, chat_id, teacher_id):
+		sql = 'DELETE FROM subscribe_teacher WHERE chat_id = ' + str(chat_id) + ' AND teacher_id = ' + str(teacher_id) + ';'
+		self.__sql_query_non_result__(sql)
+
+	#получение подписок на преподавателей
+	def get_subscribe_teacher(self, chat_id):
+		sql = 'SELECT teacher_id, teachers.name FROM subscribe_teacher INNER JOIN teachers ON teachers.id = subscribe_teacher.teacher_id '
+		sql += 'WHERE chat_id = ' + str(chat_id) + ';'
+		result = self.__sql_query_with_result__(sql)
+		teachers = list()
+		for teacher in result:
+			teachers.append({
+				'id': teacher[0],
+				'name': teacher[1]
+				})
+		return teachers
 
 db = SqlDB(KeysDB.HOST, KeysDB.USER, KeysDB.PASSWORD, KeysDB.DATABASE)
