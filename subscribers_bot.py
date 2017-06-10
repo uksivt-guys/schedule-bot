@@ -285,7 +285,7 @@ def callback_inline(call):
 
 #обработка меню
 @bot.message_handler(content_types=['text'])
-def repeat_all_messages(message):
+def callback_messages(message):
 
 	chat_id = message.chat.id
 	teachers = database.check_subscribe_teacher(chat_id)
